@@ -1,0 +1,24 @@
+[
+  {
+    "id": "doorcam",
+    "name": "ESP32 Doorcam",
+    "type": "mjpeg",
+    "url": "http://CAMERA_IP:81/",
+    "fps_limit": 6.0,
+    "has_ptz": false
+  },
+  {
+    "id": "ptz_gate",
+    "name": "PTZ Gate Cam",
+    "type": "rtsp",
+    "url": "rtsp://USER:PASSWORD@CAMERA_IP:5543/live/channel1",
+    "fps_limit": 10.0,
+    "has_ptz": true,
+    "onvif": {
+      "ip": "CAMERA_IP",
+      "port": 8000,
+      "user": "USER",
+      "pass": "PASSWORD"
+    }
+  }
+]

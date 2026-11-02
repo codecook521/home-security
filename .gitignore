@@ -1,0 +1,17 @@
+events/
+events/.cache/
+faces/*.jpg
+faces/*.png
+__pycache__/
+*.pt
+# Secrets and localized configurations
+.env
+cameras.json
+*.secret
+
+# macOS metadata
+.DS_Store
+._*
+
+# Runtime logs
+detections.csv

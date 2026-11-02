@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vikirna Mediatek — Unified Surveillance Intelligence Console</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #0b0f17;
+      color: #e2e8f0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: #111827;
+      border-bottom: 1px solid #1f293d;
+      padding: 14px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .brand img {
+      height: 36px;
+      object-fit: contain;
+    }
+    .brand h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: #f8fafc;
+    }
+    .brand span {
+      color: #38bdf8;
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+    .header-badges {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 9999px;
+    }
+    .badge-online { background: #064e3b; color: #34d399; border: 1px solid #059669; }
+    .badge-rec { background: #7f1d1d; color: #fca5a5; border: 1px solid #dc2626; display: none; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-green { background: #34d399; box-shadow: 0 0 8px #34d399; }
+    .dot-red { background: #ef4444; box-shadow: 0 0 8px #ef4444; animation: pulse 1s infinite alternate; }
+    @keyframes pulse { from { opacity: 0.4; } to { opacity: 1; } }
+
+    .main-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      padding: 24px;
+      max-width: 1440px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .grid-top {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 20px;
+    }
+    @media (max-width: 960px) {
+      .grid-top { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: #111827;
+      border: 1px solid #1f293d;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+    }
+    .viewport-card {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      background: #030712;
+      border: 1px solid #1e293b;
+    }
+    .viewport-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #1e293b;
+    }
+    .live-camera-tabs {
+      display: flex;
+      gap: 8px;
+    }
+    .live-cam-btn {
+      background: #0f172a;
+      color: #94a3b8;
+      border: 1px solid #1e293b;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .live-cam-btn:hover { background: #1e293b; color: #f8fafc; }
+    .live-cam-btn.active {
+      background: #0284c7;
+      color: #fff;
+      border-color: #38bdf8;
+    }
+    .live-cam-btn.active.doorcam-btn {
+      background: #d97706;
+      border-color: #f59e0b;
+    }
+
+    .video-frame {
+      width: 100%;
+      height: auto;
+      max-height: 68vh;
+      border-radius: 8px;
+      object-fit: contain;
+      background: #000;
+    }
+    h2 {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 14px;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 8px;
+    }
+
+    /* D-PAD PTZ */
+    .dpad-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 220px;
+      margin: 10px auto 14px auto;
+    }
+    .ptz-btn {
+      background: #1e293b;
+      color: #f1f5f9;
+      border: 1px solid #334155;
+      font-weight: 600;
+      border-radius: 8px;
+      height: 52px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.1rem;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .ptz-btn:active { background: #0284c7; border-color: #38bdf8; transform: scale(0.95); }
+    .ptz-btn.stop { background: #991b1b; border-color: #ef4444; font-size: 0.82rem; }
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      padding: 12px 14px;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #334155;
+      transition: .2s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #0284c7; }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    /* Archive Controls & Filter Bar */
+    .archive-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 10px;
+    }
+    .cam-tabs {
+      display: flex;
+      gap: 8px;
+    }
+    .tab-btn {
+      background: #0f172a;
+      color: #94a3b8;
+      border: 1px solid #1e293b;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { background: #1e293b; color: #f8fafc; }
+    .tab-btn.active {
+      background: #0284c7;
+      color: #fff;
+      border-color: #38bdf8;
+    }
+
+    /* Archive Viewer Layout */
+    .archive-grid {
+      display: grid;
+      grid-template-columns: 320px 290px 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 1100px) {
+      .archive-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Calendar Styling */
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .cal-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #f8fafc;
+    }
+    .cal-btn {
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .cal-btn:hover { background: #334155; color: #fff; }
+    .cal-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      gap: 4px;
+    }
+    .day-name {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #64748b;
+      padding: 4px 0;
+    }
+    .cal-cell {
+      height: 36px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 0.8rem;
+      border-radius: 6px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      cursor: pointer;
+      color: #94a3b8;
+    }
+    .cal-cell.empty { background: transparent; border: none; cursor: default; }
+    .cal-cell.has-recordings {
+      background: #7f1d1d !important;
+      color: #fecaca !important;
+      font-weight: 700;
+      border: 1px solid #ef4444 !important;
+      box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+    }
+    .cal-cell.selected {
+      border: 2px solid #38bdf8 !important;
+      color: #fff !important;
+    }
+
+    /* Event Timeline */
+    .event-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .event-item {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      padding: 10px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .event-item:hover, .event-item.active {
+      background: #1e293b;
+      border-color: #38bdf8;
+    }
+    .event-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .event-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+    .cam-tag {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .cam-tag.cpplus {
+      background: #082f49;
+      color: #38bdf8;
+      border: 1px solid #0284c7;
+    }
+    .cam-tag.doorcam {
+      background: #451a03;
+      color: #f59e0b;
+      border: 1px solid #d97706;
+    }
+    .event-meta {
+      font-size: 0.72rem;
+      color: #64748b;
+      margin-top: 4px;
+      word-break: break-all;
+    }
+
+    /* Video Player */
+    .player-wrapper {
+      display: flex;
+      flex-direction: column;
+      background: #030712;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #1e293b;
+    }
+    video {
+      width: 100%;
+      height: 340px;
+      background: #000;
+    }
+    .player-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: #111827;
+      border-top: 1px solid #1e293b;
+    }
+    .p-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #f1f5f9;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .p-btn:hover { background: #0284c7; border-color: #38bdf8; }
+    select.speed-select {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #f1f5f9;
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      outline: none;
+    }
+    .track-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: #94a3b8;
+      margin-left: auto;
+    }
+    footer {
+      border-top: 1px solid #1f293d;
+      padding: 12px 28px;
+      background: #0f172a;
+      font-size: 0.8rem;
+      color: #64748b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <img src="https://www.vikirna.com/logo.png" alt="Vikirna Logo" onerror="this.style.display='none'">
+      <div>
+        <h1>VIKIRNA MEDIATEK</h1>
+        <span>SURVEILLANCE INTELLIGENCE CONSOLE</span>
+      </div>
+    </div>
+    <div class="header-badges">
+      <div class="badge badge-rec" id="rec-badge">
+        <div class="dot dot-red"></div>
+        RECORDING
+      </div>
+      <div class="badge badge-online" id="active-cam-badge">
+        <div class="dot dot-green"></div>
+        CAM: CP PLUS PTZ
+      </div>
+    </div>
+  </header>
+
+  <div class="main-layout">
+
+    <!-- TOP SECTION: Live Camera Feed & PTZ Steering -->
+    <div class="grid-top">
+      <div class="card viewport-card">
+        <div class="viewport-header">
+          <div style="font-weight: 700; font-size: 0.9rem; color: #f8fafc;" id="viewport-title">
+            Live Stream: CP Plus Wi-Fi PTZ
+          </div>
+          <!-- Live Camera Viewport Selector -->
+          <div class="live-camera-tabs">
+            <button class="live-cam-btn active" id="live-btn-cpplus" onclick="switchLiveCamera('cpplus')">
+              CP Plus (PTZ)
+            </button>
+            <button class="live-cam-btn doorcam-btn" id="live-btn-doorcam" onclick="switchLiveCamera('doorcam')">
+              ESP32 Doorcam
+            </button>
+          </div>
+        </div>
+        <img id="live-viewport-img" src="/video_feed" class="video-frame" alt="Live Camera Feed">
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- PTZ Panel: Enabled for CP Plus, Disabled for Fixed Doorcam -->
+        <div class="card" id="ptz-panel-card">
+          <h2 id="ptz-panel-title">Precision PTZ Steering</h2>
+          <div class="dpad-container" id="dpad-wrapper">
+            <div></div>
+            <button class="ptz-btn" onmousedown="sendMove(0, 1.0)" onmouseup="sendStop()" onmouseleave="sendStop()">▲</button>
+            <div></div>
+
+            <button class="ptz-btn" onmousedown="sendMove(-1.0, 0)" onmouseup="sendStop()" onmouseleave="sendStop()">◀</button>
+            <button class="ptz-btn stop" onclick="sendStop()">HALT</button>
+            <button class="ptz-btn" onmousedown="sendMove(1.0, 0)" onmouseup="sendStop()" onmouseleave="sendStop()">▶</button>
+
+            <div></div>
+            <button class="ptz-btn" onmousedown="sendMove(0, -1.0)" onmouseup="sendStop()" onmouseleave="sendStop()">▼</button>
+            <div></div>
+          </div>
+
+          <div class="toggle-row" id="autotrack-wrapper">
+            <div>
+              <div style="font-size: 0.85rem; font-weight: 600;">Auto-Track Motion</div>
+              <div style="font-size: 0.72rem; color: #64748b;">Visual servo follow</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-track" onchange="toggleAutoTrack(this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div id="doorcam-info-note" style="display: none; font-size: 0.8rem; color: #94a3b8; line-height: 1.5; padding: 10px 0;">
+            <strong>Fixed Camera:</strong> ESP32 Doorcam has no mechanical motors. YOLOv8 object recognition and hardware flash triggering are handled continuously by <code>yolo_detector.py</code>.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM SECTION: Multi-Camera Archive Browser -->
+    <div class="card">
+      <div class="archive-header">
+        <h2 style="margin: 0; border: none; padding: 0;">Multi-Camera Surveillance Archive</h2>
+        
+        <!-- Camera Selector Tabs -->
+        <div class="cam-tabs">
+          <button class="tab-btn active" id="tab-all" onclick="selectCameraFilter('all')">All Cameras</button>
+          <button class="tab-btn" id="tab-cpplus" onclick="selectCameraFilter('cpplus')">CP Plus (PTZ)</button>
+          <button class="tab-btn" id="tab-doorcam" onclick="selectCameraFilter('doorcam')">Doorcam (MP4/AVI)</button>
+        </div>
+      </div>
+
+      <div class="archive-grid">
+        
+        <!-- Column 1: Date Calendar -->
+        <div>
+          <div class="cal-header">
+            <button class="cal-btn" onclick="prevMonth()">◀</button>
+            <div class="cal-title" id="cal-month-year">October 2026</div>
+            <button class="cal-btn" onclick="nextMonth()">▶</button>
+          </div>
+          <div class="cal-days" id="cal-days-grid"></div>
+        </div>
+
+        <!-- Column 2: Event Timeline -->
+        <div>
+          <div style="font-size: 0.8rem; font-weight: 600; color: #94a3b8; margin-bottom: 8px;" id="selected-date-label">
+            Select a highlighted date
+          </div>
+          <div class="event-list" id="event-timeline">
+            <div style="color: #64748b; font-size: 0.8rem; text-align: center; padding: 20px;">No events loaded</div>
+          </div>
+        </div>
+
+        <!-- Column 3: High-Res HTML5 Player with Live Transmuxing -->
+        <div class="player-wrapper">
+          <video id="archive-player" controls preload="metadata"></video>
+          <div class="player-controls">
+            <button class="p-btn" onclick="togglePlay()">⏯ Play / Pause</button>
+            <button class="p-btn" onclick="skip(-5)">⏪ -5s</button>
+            <button class="p-btn" onclick="skip(5)">⏩ +5s</button>
+            
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #94a3b8;">
+              <span>Speed:</span>
+              <select class="speed-select" onchange="setPlaybackSpeed(this.value)">
+                <option value="0.5">0.5x</option>
+                <option value="1.0" selected>1.0x</option>
+                <option value="1.5">1.5x</option>
+                <option value="2.0">2.0x</option>
+                <option value="4.0">4.0x</option>
+              </select>
+            </div>
+
+            <div class="track-title" id="now-playing">No clip selected</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <div>Vikirna Mediatek Surveillance Architecture — Events Folder: /events</div>
+    <div>CP Plus ({{ cam_ip or 'Online' }})  |  ESP32 Doorcam ({{ doorcam_ip or 'Online' }})</div>
+  </footer>
+
+  <script>
+    let activeLiveCamera = 'cpplus';
+
+    function switchLiveCamera(cam) {
+      activeLiveCamera = cam;
+      const img = document.getElementById('live-viewport-img');
+      const title = document.getElementById('viewport-title');
+      const badge = document.getElementById('active-cam-badge');
+      const dpad = document.getElementById('dpad-wrapper');
+      const autoTrack = document.getElementById('autotrack-wrapper');
+      const note = document.getElementById('doorcam-info-note');
+      const ptzTitle = document.getElementById('ptz-panel-title');
+
+      document.querySelectorAll('.live-cam-btn').forEach(b => b.classList.remove('active'));
+
+      if (cam === 'doorcam') {
+        document.getElementById('live-btn-doorcam').classList.add('active');
+        img.src = '/doorcam_feed';
+        title.textContent = 'Live Stream: ESP32 Doorcam';
+        badge.innerHTML = '<div class="dot dot-green"></div> CAM: ESP32 DOORCAM';
+        dpad.style.display = 'none';
+        autoTrack.style.display = 'none';
+        note.style.display = 'block';
+        ptzTitle.textContent = 'Camera Configuration';
+      } else {
+        document.getElementById('live-btn-cpplus').classList.add('active');
+        img.src = '/video_feed';
+        title.textContent = 'Live Stream: CP Plus Wi-Fi PTZ';
+        badge.innerHTML = '<div class="dot dot-green"></div> CAM: CP PLUS PTZ';
+        dpad.style.display = 'grid';
+        autoTrack.style.display = 'flex';
+        note.style.display = 'none';
+        ptzTitle.textContent = 'Precision PTZ Steering';
+      }
+    }
+
+    // Live Controls & Polling
+    function sendMove(pan, tilt) {
+      if (activeLiveCamera !== 'cpplus') return;
+      fetch('/api/ptz/move', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pan: pan, tilt: tilt })
+      });
+    }
+
+    function sendStop() {
+      if (activeLiveCamera !== 'cpplus') return;
+      fetch('/api/ptz/stop', { method: 'POST' });
+    }
+
+    function toggleAutoTrack(enabled) {
+      fetch('/api/track/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: enabled })
+      });
+    }
+
+    setInterval(() => {
+      fetch('/api/status')
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('rec-badge').style.display = data.recording ? 'flex' : 'none';
+          document.getElementById('toggle-track').checked = data.auto_track;
+        })
+        .catch(() => {});
+    }, 500);
+
+    // Keyboard PTZ Steer
+    let activeKey = null;
+    window.addEventListener('keydown', (e) => {
+      if (['INPUT', 'SELECT'].includes(e.target.tagName)) return;
+      if (e.repeat || activeLiveCamera !== 'cpplus') return;
+      if (e.key === 'w' || e.key === 'ArrowUp') { activeKey = e.key; sendMove(0, 1.0); }
+      else if (e.key === 's' || e.key === 'ArrowDown') { activeKey = e.key; sendMove(0, -1.0); }
+      else if (e.key === 'a' || e.key === 'ArrowLeft') { activeKey = e.key; sendMove(-1.0, 0); }
+      else if (e.key === 'd' || e.key === 'ArrowRight') { activeKey = e.key; sendMove(1.0, 0); }
+      else if (e.code === 'Space') { activeKey = null; sendStop(); }
+    });
+    window.addEventListener('keyup', (e) => {
+      if (['INPUT', 'SELECT'].includes(e.target.tagName)) return;
+      if (['w', 's', 'a', 'd', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        if (activeKey === e.key) { activeKey = null; sendStop(); }
+      }
+    });
+
+    // --- Archive & Multi-Camera Filter Logic ---
+    let currentCameraFilter = 'all';
+    let currentCalDate = new Date();
+    let highlightedDates = new Set();
+    let activeSelectedDate = null;
+
+    function selectCameraFilter(filter) {
+      currentCameraFilter = filter;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`tab-${filter}`).classList.add('active');
+      fetchRecordingDates();
+    }
+
+    function fetchRecordingDates() {
+      fetch(`/api/recordings/dates?camera=${currentCameraFilter}`)
+        .then(res => res.json())
+        .then(dates => {
+          highlightedDates = new Set(dates);
+          renderCalendar();
+          if (dates.length > 0) {
+            if (!activeSelectedDate || !highlightedDates.has(activeSelectedDate)) {
+              selectDate(dates[dates.length - 1]);
+            } else {
+              selectDate(activeSelectedDate);
+            }
+          } else {
+            document.getElementById('event-timeline').innerHTML = '<div style="color: #64748b; font-size: 0.8rem; text-align: center; padding: 20px;">No events recorded for this camera.</div>';
+            document.getElementById('selected-date-label').textContent = 'No events';
+          }
+        });
+    }
+
+    function renderCalendar() {
+      const year = currentCalDate.getFullYear();
+      const month = currentCalDate.getMonth();
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      document.getElementById('cal-month-year').textContent = `${monthNames[month]} ${year}`;
+
+      const grid = document.getElementById('cal-days-grid');
+      grid.innerHTML = '';
+
+      ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].forEach(d => {
+        const h = document.createElement('div');
+        h.className = 'day-name';
+        h.textContent = d;
+        grid.appendChild(h);
+      });
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      for (let i = 0; i < firstDay; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cal-cell empty';
+        grid.appendChild(cell);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const cell = document.createElement('div');
+        cell.className = 'cal-cell';
+        cell.textContent = day;
+
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        if (highlightedDates.has(dateStr)) {
+          cell.classList.add('has-recordings');
+        }
+        if (activeSelectedDate === dateStr) {
+          cell.classList.add('selected');
+        }
+
+        cell.onclick = () => selectDate(dateStr);
+        grid.appendChild(cell);
+      }
+    }
+
+    function prevMonth() {
+      currentCalDate.setMonth(currentCalDate.getMonth() - 1);
+      renderCalendar();
+    }
+    function nextMonth() {
+      currentCalDate.setMonth(currentCalDate.getMonth() + 1);
+      renderCalendar();
+    }
+
+    function selectDate(dateStr) {
+      activeSelectedDate = dateStr;
+      document.getElementById('selected-date-label').textContent = `Events on ${dateStr}`;
+      renderCalendar();
+
+      fetch(`/api/recordings/list?date=${dateStr}&camera=${currentCameraFilter}`)
+        .then(res => res.json())
+        .then(events => {
+          const listEl = document.getElementById('event-timeline');
+          listEl.innerHTML = '';
+
+          if (events.length === 0) {
+            listEl.innerHTML = '<div style="color: #64748b; font-size: 0.8rem; text-align: center; padding: 20px;">No events on this day.</div>';
+            return;
+          }
+
+          events.forEach((ev, idx) => {
+            const item = document.createElement('div');
+            item.className = 'event-item';
+            const camLabel = ev.camera === 'doorcam' ? 'Doorcam' : 'CP Plus';
+            const tagClass = ev.camera === 'doorcam' ? 'doorcam' : 'cpplus';
+
+            item.innerHTML = `
+              <div class="event-row">
+                <div class="event-time">${ev.time}</div>
+                <span class="cam-tag ${tagClass}">${camLabel} (${ev.type})</span>
+              </div>
+              <div class="event-meta">${ev.filename}  •  ${ev.size}</div>
+            `;
+            item.onclick = () => {
+              document.querySelectorAll('.event-item').forEach(el => el.classList.remove('active'));
+              item.classList.add('active');
+              loadVideo(ev.url, ev.filename);
+            };
+            listEl.appendChild(item);
+
+            if (idx === 0) {
+              item.click();
+            }
+          });
+        });
+    }
+
+    // --- In-Page Player Controls ---
+    const player = document.getElementById('archive-player');
+
+    function loadVideo(url, name) {
+      player.src = url;
+      document.getElementById('now-playing').textContent = name;
+      player.play().catch(() => {});
+    }
+
+    function togglePlay() {
+      if (player.paused) player.play();
+      else player.pause();
+    }
+
+    function skip(sec) {
+      player.currentTime = Math.max(0, Math.min(player.duration, player.currentTime + sec));
+    }
+
+    function setPlaybackSpeed(spd) {
+      player.playbackRate = parseFloat(spd);
+    }
+
+    fetchRecordingDates();
+  </script>
+</body>
+</html>
